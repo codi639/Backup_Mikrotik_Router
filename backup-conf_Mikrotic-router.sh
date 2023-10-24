@@ -7,10 +7,10 @@ Router_Username="admin"
 
 File_Name=$(date +'%d-%m-%Y')
 
-local_path_to_save="/your/path/to/save/backup"
+local_path_to_save="/your/local/path/to/save"
 
 SSH_Export_Conf="/export file=Configuration"
-SSH_Export_Backup="/system backup save name=Backup dont-encrypt=yes password=admin encryption=aes-sha256"
+SSH_Export_Backup="/system backup save name=Backup dont-encrypt=yes password=password encryption=aes-sha256"
 
 
 #sshpass -p "$Router_Password" 
