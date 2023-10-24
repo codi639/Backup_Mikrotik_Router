@@ -3,7 +3,7 @@
 
 Router_IP="192.168.1.1"
 Router_Username="admin"
-#Router_Password="admin" # You can use this line if you don't want to use ssh keys. If you want to use ssh keys, comment this line and the 'sshpass' lines. You also need to delete the '-i' option in the 'ssh' and 'scp' lines.
+#Router_Password="admin" # You can use this line if you don't want to use ssh keys. If you want to use ssh keys, comment this line and uncomment the 'sshpass' lines. You also need to delete the '-i' option in the 'ssh' and 'scp' lines.
 
 File_Name=$(date +'%d-%m-%Y')
 
