@@ -7,7 +7,7 @@ Router_Username="admin"
 
 File_Name=$(date +'%d-%m-%Y')
 
-local_path_to_save="/home/jean-lou/Documents/Entrainements"
+local_path_to_save="/your/path/to/save/backup"
 
 SSH_Export_Conf="/export file=Configuration"
 SSH_Export_Backup="/system backup save name=Backup dont-encrypt=yes password=admin encryption=aes-sha256"
