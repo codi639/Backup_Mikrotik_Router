@@ -10,8 +10,8 @@ File_Name=$(date +'%d-%m-%Y')
 
 local_path_to_save="$HOME/path/to/save/your/backup"
 
-SSH_Export_Conf="/export file=Configuration" # Mikrotic command to export the configuration
-SSH_Export_Backup="/system backup save name=Backup" # Mikrotic command to export the backup
+SSH_Export_Conf="/export file=Configuration;" # Mikrotic command to export the configuration
+SSH_Export_Backup="/system backup save name=Backup;" # Mikrotic command to export the backup
 
 max_backup=199 # Number of backups to keep
 
