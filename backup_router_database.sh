@@ -8,7 +8,7 @@ Router_Password="passwd" # Change this password with the password of user you wa
 
 File_Name=$(date +'%d-%m-%Y')
 
-local_path_to_save="$HOME/path/to/save/your/backup"
+local_path_to_save="$HOME/path/to/save/the/backup"
 
 SSH_Export_Conf="/export file=Configuration;" # Mikrotic command to export the configuration
 SSH_Export_Backup="/system backup save name=Backup;" # Mikrotic command to export the backup
@@ -155,10 +155,10 @@ do
         rotate_backups
 
         # Execution of the backup on the router.
-        timeout $timeout_ssh sshpass -p"$Router_Password"  ssh "$Router_Username"@"$Router_IP" "$SSH_Export_Conf" &> /dev/null # Connection and execution of the export command
+        sshpass -p"$Router_Password"  ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP" "$SSH_Export_Conf" &> /dev/null # Connection and execution of the export command
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 255 ]; then
             {
                 echo "$Router_IP SSH export failed (timeout)"
             } | tee -a backup/report/report.0
@@ -168,10 +168,10 @@ do
             } | tee -a backup/report/report.0
         fi
 
-        timeout $timeout_ssh sshpass -p"$Router_Password"  ssh "$Router_Username"@"$Router_IP" "$SSH_Export_Backup" &> /dev/null # Connection and execution of the backup command
+        timeout $timeout_ssh sshpass -p"$Router_Password"  ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP" "$SSH_Export_Backup" &> /dev/null # Connection and execution of the backup command
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 255 ]; then
             {
                 echo "$Router_IP SSH backup failed (timeout)"
             } | tee -a backup/report/report.0
@@ -182,10 +182,10 @@ do
         fi
 
         # Copy of the backup files to the local machine.
-        timeout $timeout_ssh sshpass -p"$Router_Password"  scp "$Router_Username"@"$Router_IP":Configuration.rsc "$local_path_to_save/$Router_IP/backup.0/$File_Name-Conf.src" &> /dev/null # Copy of the export file from remote to local path
+        scp -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP":Configuration.rsc "$local_path_to_save/$Router_IP/backup.0/$File_Name-Conf.src" &> /dev/null # Copy of the export file from remote to local path
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 255 ]; then
             {
                 echo "$Router_IP export failed (timeout)"
             } | tee -a backup/report/report.0
@@ -197,10 +197,10 @@ do
             scp_state=1
         fi
 
-        timeout $timeout_ssh sshpass -p"$Router_Password"  scp "$Router_Username"@"$Router_IP":Backup.backup "$local_path_to_save/$Router_IP/backup.0/$File_Name-Back.backup" &> /dev/null # Copy of the backup file from remote to local path
+        sshpass -p"$Router_Password"  scp -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP":Backup.backup "$local_path_to_save/$Router_IP/backup.0/$File_Name-Back.backup" &> /dev/null # Copy of the backup file from remote to local path
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 255 ]; then
             {
                 echo "$Router_IP backup failed (timeout)"
             } | tee -a backup/report/report.0
