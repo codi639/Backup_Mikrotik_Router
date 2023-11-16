@@ -143,10 +143,10 @@ for Router_IP in $(cat Router_IPs.txt); do
         rotate_backups
 
         # Execution of the backup on the router.
-        timeout $timeout_ssh sshpass -p"$Router_Password" ssh "$Router_Username"@"$Router_IP" "$SSH_Export_Conf" &> /dev/null
+        sshpass -p"$Router_Password" ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP" "$SSH_Export_Conf" &> /dev/null
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 225 ]; then
             {
                 echo "$Router_IP SSH export failed (timeout)"
             } | tee -a backup/report/report.0
@@ -156,10 +156,10 @@ for Router_IP in $(cat Router_IPs.txt); do
             } | tee -a backup/report/report.0
         fi
 
-        timeout $timeout_ssh sshpass -p"$Router_Password" ssh "$Router_Username"@"$Router_IP" "$SSH_Export_Backup" &> /dev/null
+        sshpass -p"$Router_Password" ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP" "$SSH_Export_Backup" &> /dev/null
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 225 ]; then
             {
                 echo "$Router_IP SSH backup failed (timeout)"
             } | tee -a backup/report/report.0
@@ -170,10 +170,10 @@ for Router_IP in $(cat Router_IPs.txt); do
         fi
 
         # Copy the backup files to the local machine
-        timeout $timeout_ssh sshpass -p"$Router_Password" scp "$Router_Username"@"$Router_IP":Configuration.rsc "$local_path_to_save/$Router_IP/backup.0/$File_Name-Conf.src" &> /dev/null
+        sshpass -p"$Router_Password" scp -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP":Configuration.rsc "$local_path_to_save/$Router_IP/backup.0/$File_Name-Conf.src" &> /dev/null
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 225 ]; then
             {
                 echo "$Router_IP export failed (timeout)"
             } | tee -a backup/report/report.0
@@ -185,10 +185,10 @@ for Router_IP in $(cat Router_IPs.txt); do
             scp_state=1
         fi
 
-        timeout $timeout_ssh sshpass -p"$Router_Password" scp "$Router_Username"@"$Router_IP":Backup.backup "$local_path_to_save/$Router_IP/backup.0/$File_Name-Back.backup" &> /dev/null
+        sshpass -p"$Router_Password" scp -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=5 "$Router_Username"@"$Router_IP":Backup.backup "$local_path_to_save/$Router_IP/backup.0/$File_Name-Back.backup" &> /dev/null
         exit_code=$?
         # Error handling
-        if [ $exit_code -eq 124 ]; then
+        if [ $exit_code -eq 225 ]; then
             {
                 echo "$Router_IP backup failed (timeout)"
             } | tee -a backup/report/report.0
