@@ -65,7 +65,7 @@ rotate_backups() {
                     mv "$file" "$dst_folder/"
                 fi  
             done
-            #mv "$src_folder"/* "$dst_folder" # for simplier version (still working but with error message)
+            #mv "$src_folder"/* "$dst_folder" # for simplified version (still working but with error message)
         fi
     done
 }
