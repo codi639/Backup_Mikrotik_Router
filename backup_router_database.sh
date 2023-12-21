@@ -1,43 +1,54 @@
 #!/bin/bash
 
-# set -x # Console debug purpose
+#set -x # Console debug purpose
 
-# Local variables
-Router_Username="yourUser" # Username to connect to the router (I recommend to create a different user than admin).
-Router_Password="yourPassword" # Change this password with the password of user you want to use to connect to the router.
-
-File_Name=$(date +'%d-%m-%Y')
-
-local_path_to_save="$HOME/backup"
+# Router variables
+Router_Username="Username" # Username to connect to the router (I recommend to create a different user than admin).
+Router_Password="Password" # Change this password with the password of user you want to use to connect to the router.
 
 SSH_Export_Conf="/export file=Configuration;" # Mikrotic command to export the configuration
 SSH_Export_Backup="/system backup save name=Backup;" # Mikrotic command to export the backup
 
-max_backup=89 # Number of backups to keep
-
 timeout_ssh=5 # Timeout for the ssh and scp command
 
-nbr_router_OK=0
-nbr_router_KO=0
 
 # Database variables
 DB_User="DBUser"
 DB_Password="DBPassword" # Change this password with the password of user you want to use to connect to the database.
 DB_Name="DBName"
-DB_Host="IPofDBHost"
+DB_Host="@Host"
 
-DB_Query="SELECT value FROM radreply WHERE attribute='DHCP-Your-IP-Address';" # Query to get the IP addresses of the routers to backup, adapt it to your database.
+DB_Query="SELECT value FROM radreply WHERE attribute='DHCP-Your-IP-Address';" # Adapt this query to your needs
 
-# Telegram bot variables
-TOKEN="1415818198:AAFEnm7ds-5xmkLokb8Y2mUjXl706_0qK3o"
-chat_id="-4094009772"
 
-# Email variables
-dst_email="mail@exemple.com"
-subject_email="Daily backup report."
+# Telegram bot information
+TOKEN="1234567890:AAAABBBBBCCCCCDDDDDEEEEE"
+chat_id="-1234567890"
+
+
+# Email information
+dst_email="email@exemple.com"
+subject_email="daily router backup reports."
+
 
 # Forbidden addresses
 Forbidden_Addresses=(10.144.1.2 10.144.1.3 10.144.1.35 10.144.1.39 10.144.1.207 10.144.1.14 10.144.1.15 10.144.1.13 10.144.1.16 10.144.1.19)
+
+
+# Some more variables
+deployed_user_file="/path/of/your/script/user_deploy/user_deploy_report.txt"
+
+nbr_router_OK=0
+nbr_router_KO=0
+
+File_Name=$(date +'%d-%m-%Y')
+
+local_path_to_save="/path/of/your/script/backup"
+
+max_backup=89 # Number of backups to keep
+
+backup_start_time=$(date +"%y-%m-%d %T")
+
 
 # Create the backup directory if it does not exists
 if [ -d "backup" ]; then
@@ -59,7 +70,7 @@ fi
 
 # Function to rotate backups
 rotate_backups() {
-    # Loop that run every backup folder from the last one to the first one (198 to 199 ....... 0 to 1 in my case)
+    # Loop that run every backup folder from the last one to the first one (88 to 89 ....... 0 to 1 in my case)
     for (( c=$max_backup-1; c>=0; c-- )); do
         src_folder="backup/$Router_IP/backup.$c"
         dst_folder="backup/$Router_IP/backup.$((c+1))"
@@ -71,7 +82,6 @@ rotate_backups() {
                     mv "$file" "$dst_folder/"
                 fi  
             done
-            #mv "$src_folder"/* "$dst_folder" # for simplier version (still working but with error message)
         fi
     done
 }
@@ -108,7 +118,6 @@ check_ping() {
 forbidden_router() {
     local ip_to_check="$1"
     for Forbidden_IP in "${Forbidden_Addresses[@]}";do
-        #echo "Checking IP: $ip_to_check against Forbidden IP: $Forbidden_IP" # Debug purpose
         if [ "$ip_to_check" == "$Forbidden_IP" ]; then
             echo "Skipping action for Router_IP: $ip_to_check"
             return 0  # Skip action
@@ -117,25 +126,23 @@ forbidden_router() {
     return 1  # Do action
 }
 
-#check_existing_user() {
-#    local ip_to_check="$1"
-#
-#    grep "$ip_to_check " user_deploy/user_deploy_report.txt &> /dev/null
-#    exit_code=$?
-#    if [ $exit_code -eq 0 ]; then
-#        {
-#            echo "User backup for $ip_to_check have not been deployed correctly."
-#        } 
-#    fi
-#}
+check_existing_user() {
+    local ip_to_check="$1"
+
+    grep "$ip_to_check " $deployed_user_file &> /dev/null
+    exit_code=$?
+    if [ $exit_code -eq 0 ]; then # If the grep command return something, then the user is not deployed (in the report file, means something went wrong)
+        {
+            echo "User backup for $ip_to_check not correctly deployed."
+        } 
+    fi
+}
 
 rotate_report
 
-backup_start_time=$(date +"%y-%m-%d %T")
-
 i=1
 # Execution of the backup
-for Router_IP in $(mysql -u $DB_User -p$DB_Password $DB_Name -N -B -e "$DB_Query") # Might need to add a -h $DB_Host option to specify the remote host of the database
+for Router_IP in $(mysql -u $DB_User -p$DB_Password $DB_Name -h $DB_Host -N -B -e "$DB_Query") # Might need to add a -h $DB_Host option to specify the remote host of the database
 do
 
     export IP_$1=$Router_IP # Extraction of IPs addresses from Router_IPs.txt
@@ -179,7 +186,7 @@ do
         # Execution of the backup on the router.
         sshpass -p"$Router_Password"  ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh "$Router_Username"@"$Router_IP" "$SSH_Export_Conf" &> /dev/null # Connection and execution of the export command
         exit_code=$?
-        #echo 'export exit_code : '$exit_code
+    
         sleep 1
         # Error handling
         if [ $exit_code -ne 0 ]; then
@@ -187,9 +194,9 @@ do
                 error_status=1
 
                 if [ $exit_code -eq 255 ]; then
-                        {
-                        echo "$Router_IP SSH export failed (timeout)"
-                        } | tee -a backup/report/report.0
+                    {
+                    echo "$Router_IP SSH export failed (timeout)"
+                    } | tee -a backup/report/report.0
                 else
                     {
                     echo "$Router_IP SSH export failed"
@@ -200,9 +207,9 @@ do
 
         sshpass -p"$Router_Password"  ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh "$Router_Username"@"$Router_IP" "$SSH_Export_Backup" &> /dev/null # Connection and execution of the backup command
         exit_code=$?
-        #echo 'backup exit_code : '$exit_code
+        
         sleep 1
-            # Error handling
+        # Error handling
         if [ $exit_code -ne 0 ]; then
             {
                 error_status=1
@@ -219,11 +226,10 @@ do
             }
         fi
 
-
         # Copy of the backup files to the local machine.
         sshpass -p"$Router_Password"  scp -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh "$Router_Username"@"$Router_IP":Configuration.rsc "$local_path_to_save/$Router_IP/backup.0/$File_Name-Conf.src" &> /dev/null # Copy of the export file from remote to local path
         exit_code=$?
-        #echo 'scp export exit_code : '$exit_code
+        
         sleep 1
         # Error handling
         if [ $exit_code -ne 0 ]; then
@@ -231,21 +237,21 @@ do
                 error_status=1
 
                 if [ $exit_code -eq 255 ]; then
-                        {
-                        echo "$Router_IP export failed (timeout)"
-                        } | tee -a backup/report/report.0
+                    {
+                    echo "$Router_IP export failed (timeout)"
+                    } | tee -a backup/report/report.0
                 else
-                        {
-                        echo "$Router_IP export failed."
-                        } | tee -a backup/report/report.0
-                        scp_state=1
+                    {
+                    echo "$Router_IP export failed."
+                    } | tee -a backup/report/report.0
+                    scp_state=1
                 fi
             }
         fi
 
         sshpass -p"$Router_Password"  scp -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh "$Router_Username"@"$Router_IP":Backup.backup "$local_path_to_save/$Router_IP/backup.0/$File_Name-Back.backup" &> /dev/null # Copy of the backup file from remote to local path
         exit_code=$?
-        #echo 'scp backup exit_code : '$exit_code
+        
         sleep 1
         # Error handling
         if [ $exit_code -ne 0 ]; then
@@ -253,14 +259,14 @@ do
                 error_status=1
                 
                 if [ $exit_code -eq 255 ]; then
-                        {
-                        echo "$Router_IP backup failed (timeout)"
-                        } | tee -a backup/report/report.0
+                    {
+                    echo "$Router_IP backup failed (timeout)"
+                    } | tee -a backup/report/report.0
                 else
-                        {
-                        echo "$Router_IP backup failed."
-                        } | tee -a backup/report/report.0
-                        scp_state=1
+                    {
+                    echo "$Router_IP backup failed."
+                    } | tee -a backup/report/report.0
+                    scp_state=1
                 fi
             }
         fi
@@ -272,15 +278,14 @@ do
         fi
 
         if [ $error_status -ne 0 ]; then
-
-                {
-                        #check_existing_user "$Router_IP"
-                        echo "__________________________________"
-                        echo
-                } >> backup/report/report.0
+            {
+                check_existing_user "$Router_IP"
+                echo "__________________________________"
+                echo
+            } >> backup/report/report.0
         fi
 
-	    echo
+        echo
 
 
     else
@@ -292,6 +297,7 @@ do
     i=$((i+1))
 done
 
+
 backup_end_time=$(date +"%y-%m-%d %T")
 
 total_backup_time=$(( $(date -d "$backup_end_time" +%s) - $(date -d "$backup_start_time" +%s) ))
@@ -302,7 +308,6 @@ total_backup_seconds=$((total_backup_time % 60))
 echo "$nbr_router_OK routers backed up successfully."
 echo "$nbr_router_KO routers failed to backup."
 
-# To send the report mail it is necessary to configure postfix correctly, which this script does not do.
 
 true > /tmp/brief_report.txt
 
@@ -317,24 +322,17 @@ true > /tmp/brief_report.txt
     echo "total backup time : $total_backup_hours hours $total_backup_minutes minutes $total_backup_seconds seconds"
 } >> /tmp/brief_report.txt
 
-message=$(cat "/tmp/brief_report.txt" "backup/report/report.0")
-#echo "$message"
 
+# Send the email
+message=$(cat "/tmp/brief_report.txt" "backup/report/report.0")
 echo "$message" | mail -s "$subject_email" "$dst_email"
 
-# Send to the Telegram bot
 
+# Send to the Telegram bot
 cp backup/report/report.0 backup/report/report.0.log
 #cp backup/report/report.0 /tmp/report.0.log
 
 message_telegram=$(cat /tmp/brief_report.txt)
-
-#curl -s "https://api.telegram.org/bot$TOKEN/sendMessage" \
-#    -d "chat_id=$chat_id" \
-#    -d "text=$message_telegram" \
-#    -d "parse_mode=markdown" \
-#    > /dev/null
-
 curl -s "https://api.telegram.org/bot$TOKEN/sendDocument" \
     -F chat_id="$chat_id" \
     -F document=@"backup/report/report.0.log" \
