@@ -305,7 +305,7 @@ echo "$nbr_router_KO routers failed to backup."
 true > /tmp/brief_report.txt
 
 {
-    echo "Sauvegarde Mikrotik reseau hertzien :"
+    echo "Backup Mikrotik routers:"
     echo "Start backup: $backup_start_time"
     echo
     echo "$nbr_router_OK sauvegarde OK"
