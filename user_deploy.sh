@@ -3,21 +3,22 @@
 #set -x
 
 # Router variables
-Router_Username="user" # Username to connect to the router (I recommend creating a different user than admin with this script).
+Router_Username="Username" # Username to connect to the router (I recommend creating a different user than admin with this script).
 Router_Password="Password" # Change this password with the password of user you want to use to connect to the router.
 
 
 # set the new user variables
 new_user="user"
-new_password="password"
+new_password="psswd"
 new_address="@IP"
+new_group="full"
 
 
 # Database variables
 DB_User="DBUser"
 DB_Password="DBPassword" # Change this password with the password of user you want to use to connect to the database.
 DB_Name="DBName"
-DB_Host="DBHost"
+DB_Host="@Host"
 
 DB_Query="SELECT value FROM radreply WHERE attribute='DHCP-Your-IP-Address';" # Query to get the IP addresses of the routers (you might need to change the query to match your database).
 
@@ -77,10 +78,10 @@ for Router_IP in $(mysql -u $DB_User -p$DB_Password $DB_Name -h $DB_Host -N -B -
         sleep 2
 
         sshpass -p"$Router_Password" ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh -o KexAlgorithms=diffie-hellman-group14-sha1 "$Router_Username"@"$Router_IP" "/user remove [find name="$new_user"];" 2> /dev/null
-        sshpass -p"$Router_Password" ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh -o KexAlgorithms=diffie-hellman-group14-sha1 "$Router_Username"@"$Router_IP" "/user add name=$new_user group=full password=$new_password address=$new_address;" 2> /dev/null # Add the user to the full group (user, password and address to change at your convenience).  10.144.0.33
+        sshpass -p"$Router_Password" ssh -q -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -o ConnectTimeout=$timeout_ssh -o KexAlgorithms=diffie-hellman-group14-sha1 "$Router_Username"@"$Router_IP" "/user add name=$new_user group=$new_group password=$new_password address=$new_address;" 2> /dev/null
         exit_code=$?
         sleep 1
-            # Error handling
+        # Error handling
         if [ $exit_code -ne 0 ]; then
             {
                 if [ $exit_code -eq 255 ]; then
@@ -120,7 +121,7 @@ for Router_IP in $(mysql -u $DB_User -p$DB_Password $DB_Name -h $DB_Host -N -B -
         fi
 
     else
-        echo "$Router_IP did not respond to ping. SSH key deploy aborted."
+        echo "$Router_IP did not respond to ping. SSH user deploy aborted."
         echo
     fi
 
