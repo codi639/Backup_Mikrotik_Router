@@ -11,7 +11,7 @@ The scripts generate error reports, which are sent by Telegram using a bot and b
 
 ## Be aware !
 Please take the time to read the SSH commands before launching the scripts. They are designed to suit the router versions I use, to be modified as required.
-If you use cron to automate script execution: you need to provide absolute paths for reading files in scripts (not writing). You also need to block cron from sending automatic e-mails:
+You need to block cron from sending automatic e-mails:
 In the crontab file:
 `crontab -e`
 add the line:
@@ -26,4 +26,3 @@ add the line:
 MAILTO:""
 0 2 * * * /path/to/your/script/backup_router_database.sh
 ```
-In this example, the database backup script is run every day at 2 a.m.
